@@ -707,21 +707,19 @@ document.querySelectorAll('.profile-btn').forEach(function(btn) {
         var samePerson = btn.dataset.person === currentPerson;
         var sameMode   = btn.dataset.mode   === currentMode;
 
-        // Toujours retirer toutes les classes actives d'abord
-        document.querySelectorAll('.profile-btn').forEach(function(b) {
-            b.classList.remove('active-vacances','active-ecole');
-        });
-
         if (samePerson && sameMode) {
-            // Désélection immédiate — on remet à null sans refreshAll
+            // Désélection
+            btn.classList.remove('active-vacances', 'active-ecole');
             currentPerson = null;
             currentMode   = null;
         } else {
             // Nouvelle sélection
+            document.querySelectorAll('.profile-btn').forEach(function(b) {
+                b.classList.remove('active-vacances','active-ecole');
+            });
             currentPerson = btn.dataset.person;
             currentMode   = btn.dataset.mode;
             btn.classList.add('active-' + currentMode);
-            refreshAll();
         }
     });
 });
