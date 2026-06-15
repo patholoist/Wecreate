@@ -476,7 +476,7 @@
 firebase.initializeApp({
     apiKey: "AIzaSyCW5jgMVtfjlFdUketfCaHidnVvKfzGt30",
     authDomain: "wecreate-6c53e.firebaseapp.com",
-    databaseURL: "https://wecreate-6c53e-default-rtdb.firebasedatabase.app",
+    databaseURL: "https://wecreate-6c53e-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "wecreate-6c53e",
     storageBucket: "wecreate-6c53e.firebasestorage.app",
     messagingSenderId: "62409162935",
@@ -704,13 +704,20 @@ function updateAlerts() {
 // ── Sélection profil ──
 document.querySelectorAll('.profile-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
+        var isAlreadyActive = btn.classList.contains('active-vacances') || btn.classList.contains('active-ecole');
         document.querySelectorAll('.profile-btn').forEach(function(b) {
             b.classList.remove('active-vacances','active-ecole');
         });
-        currentPerson = btn.dataset.person;
-        currentMode   = btn.dataset.mode;
-        btn.classList.add('active-' + currentMode);
-        refreshAll(); // mettre à jour les jours bloqués visuellement
+        if (isAlreadyActive) {
+            // Deuxième clic = désélection
+            currentPerson = null;
+            currentMode   = null;
+        } else {
+            currentPerson = btn.dataset.person;
+            currentMode   = btn.dataset.mode;
+            btn.classList.add('active-' + currentMode);
+        }
+        refreshAll();
     });
 });
 
