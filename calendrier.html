@@ -748,14 +748,24 @@ document.getElementById('resetBtn').addEventListener('click', function() {
 });
 
 // ── Firebase ──
+var blockSync = false;
+
 function saveData() {
+    blockSync = true;
     setStatus('loading', 'Sauvegarde…');
     dataRef.set(data)
-        .then(function() { setStatus('ok', 'Données sauvegardées ✓'); })
-        .catch(function(e) { setStatus('err', 'Erreur : ' + e.message); });
+        .then(function() {
+            setStatus('ok', 'Données sauvegardées ✓');
+            setTimeout(function() { blockSync = false; }, 1000);
+        })
+        .catch(function(e) {
+            setStatus('err', 'Erreur : ' + e.message);
+            blockSync = false;
+        });
 }
 
 dataRef.on('value', function(snap) {
+    if (blockSync) return;
     data = snap.val() || {};
     refreshAll();
     setStatus('ok', 'Calendrier synchronisé en temps réel ✓');
