@@ -598,6 +598,9 @@ function toggleDay(year, month, day) {
     else arr.push(currentPerson);
 
     if (data[key].vacances.length === 0 && data[key].ecole.length === 0) delete data[key];
+    refreshMonth(year, month);
+    updateTotals();
+    updateAlerts();
     saveData();
 }
 
