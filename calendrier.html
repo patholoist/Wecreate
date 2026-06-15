@@ -704,22 +704,23 @@ function updateAlerts() {
 // ── Sélection profil ──
 document.querySelectorAll('.profile-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-        var samePerson = btn.dataset.person === currentPerson;
-        var sameMode   = btn.dataset.mode   === currentMode;
+        // Lire l'état AVANT tout changement
+        var wasActive = (btn.getAttribute('data-active') === 'true');
 
-        if (samePerson && sameMode) {
-            // Désélection
-            btn.classList.remove('active-vacances', 'active-ecole');
-            currentPerson = null;
-            currentMode   = null;
-        } else {
-            // Nouvelle sélection
-            document.querySelectorAll('.profile-btn').forEach(function(b) {
-                b.classList.remove('active-vacances','active-ecole');
-            });
+        // Tout réinitialiser
+        document.querySelectorAll('.profile-btn').forEach(function(b) {
+            b.classList.remove('active-vacances','active-ecole');
+            b.setAttribute('data-active', 'false');
+        });
+        currentPerson = null;
+        currentMode   = null;
+
+        if (!wasActive) {
+            // Activer ce bouton
             currentPerson = btn.dataset.person;
             currentMode   = btn.dataset.mode;
             btn.classList.add('active-' + currentMode);
+            btn.setAttribute('data-active', 'true');
         }
     });
 });
