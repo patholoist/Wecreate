@@ -702,29 +702,29 @@ function updateAlerts() {
 }
 
 // ── Sélection profil ──
-var ignoreNextSync = false;
-
 document.querySelectorAll('.profile-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        var wasActive = (btn.getAttribute('data-active') === 'true');
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var isActive = btn.getAttribute('data-active') === 'true';
 
-        document.querySelectorAll('.profile-btn').forEach(function(b) {
-            b.classList.remove('active-vacances','active-ecole');
-            b.setAttribute('data-active', 'false');
-        });
-        currentPerson = null;
-        currentMode   = null;
-
-        if (!wasActive) {
+        if (isActive) {
+            // Désélection
+            btn.classList.remove('active-vacances', 'active-ecole');
+            btn.setAttribute('data-active', 'false');
+            currentPerson = null;
+            currentMode   = null;
+        } else {
+            // Désélectionner tous les autres
+            document.querySelectorAll('.profile-btn').forEach(function(b) {
+                b.classList.remove('active-vacances', 'active-ecole');
+                b.setAttribute('data-active', 'false');
+            });
+            // Sélectionner celui-ci
             currentPerson = btn.dataset.person;
             currentMode   = btn.dataset.mode;
             btn.classList.add('active-' + currentMode);
             btn.setAttribute('data-active', 'true');
         }
-
-        // Bloquer le listener Firebase pendant 500ms pour ne pas écraser l'état
-        ignoreNextSync = true;
-        setTimeout(function() { ignoreNextSync = false; }, 500);
     });
 });
 
@@ -755,19 +755,6 @@ function saveData() {
 dataRef.on('value', function(snap) {
     data = snap.val() || {};
     refreshAll();
-
-    if (!ignoreNextSync) {
-        // Re-appliquer la classe active si quelqu'un est sélectionné
-        if (currentPerson && currentMode) {
-            document.querySelectorAll('.profile-btn').forEach(function(b) {
-                if (b.dataset.person === currentPerson && b.dataset.mode === currentMode) {
-                    b.classList.add('active-' + currentMode);
-                    b.setAttribute('data-active', 'true');
-                }
-            });
-        }
-    }
-
     setStatus('ok', 'Calendrier synchronisé en temps réel ✓');
 }, function(err) {
     setStatus('err', 'Erreur de connexion : ' + err.message);
