@@ -748,33 +748,28 @@ document.getElementById('resetBtn').addEventListener('click', function() {
 });
 
 // ── Firebase ──
-var blockSync = false;
-
 function saveData() {
-    blockSync = true;
     setStatus('loading', 'Sauvegarde…');
     dataRef.set(data)
-        .then(function() {
-            setStatus('ok', 'Données sauvegardées ✓');
-            setTimeout(function() { blockSync = false; }, 1000);
-        })
-        .catch(function(e) {
-            setStatus('err', 'Erreur : ' + e.message);
-            blockSync = false;
-        });
+        .then(function() { setStatus('ok', 'Données sauvegardées ✓'); })
+        .catch(function(e) { setStatus('err', 'Erreur : ' + e.message); });
 }
 
-dataRef.on('value', function(snap) {
-    if (blockSync) return;
-    data = snap.val() || {};
-    refreshAll();
-    setStatus('ok', 'Calendrier synchronisé en temps réel ✓');
-}, function(err) {
-    setStatus('err', 'Erreur de connexion : ' + err.message);
-});
+function loadData() {
+    dataRef.once('value', function(snap) {
+        data = snap.val() || {};
+        refreshAll();
+        setStatus('ok', 'Calendrier chargé ✓');
+    }, function(err) {
+        setStatus('err', 'Erreur : ' + err.message);
+    });
+}
+
+setInterval(loadData, 30000);
 
 // ── Init ──
 buildCalendars();
+loadData();
 </script>
 </body>
 </html>
