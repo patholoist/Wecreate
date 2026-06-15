@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeCreate — Calendrier des vacances</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 32px 16px;
+            color: #1a202c;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        /* LOGO */
+        .logo-wrapper {
+            background: white;
+            padding: 24px 40px;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .logo-wrapper img { max-height: 70px; width: auto; }
+
+        /* STATUS */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 11px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            font-size: 13px;
+            color: #718096;
+        }
+        .status-dot { width: 9px; height: 9px; border-radius: 50%; background: #cbd5e0; flex-shrink: 0; }
+        .status-dot.ok      { background: #10b981; }
+        .status-dot.err     { background: #ef4444; }
+        .status-dot.loading { background: #f59e0b; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
+        /* PROFILS */
+        .profiles-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+        .profiles-card h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #a0aec0;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .profiles-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .profile-btn {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            background: #f7fafc;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .profile-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+        .profile-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+        /* couleurs par personne */
+        .c-amir    { background: #6366f1; }
+        .c-zakia   { background: #ec4899; }
+        .c-jihad   { background: #f97316; }
+        .c-douaa   { background: #14b8a6; }
+        .c-maroua  { background: #8b5cf6; }
+
+        .profile-btn.active-vacances { border-color: currentColor; }
+        .profile-btn[data-person="amir"].active-vacances    { background:#eef2ff; color:#6366f1; border-color:#6366f1; }
+        .profile-btn[data-person="zakia"].active-vacances   { background:#fdf2f8; color:#ec4899; border-color:#ec4899; }
+        .profile-btn[data-person="jihad"].active-vacances   { background:#fff7ed; color:#f97316; border-color:#f97316; }
+        .profile-btn[data-person="douaa"].active-vacances   { background:#f0fdfa; color:#14b8a6; border-color:#14b8a6; }
+        .profile-btn[data-person="maroua"].active-vacances  { background:#f5f3ff; color:#8b5cf6; border-color:#8b5cf6; }
+
+        .profile-btn.active-ecole { border-style: dashed; }
+        .profile-btn[data-person="douaa"].active-ecole  { background:#fefce8; color:#ca8a04; border-color:#ca8a04; }
+        .profile-btn[data-person="maroua"].active-ecole { background:#fef2f2; color:#dc2626; border-color:#dc2626; }
+
+        .mode-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-vacances { background: #dbeafe; color: #1d4ed8; }
+        .badge-ecole    { background: #fef9c3; color: #a16207; }
+
+        /* LÉGENDE */
+        .legend {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .legend-title { font-size: 12px; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px; margin-right: 4px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4a5568; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .legend-square { width: 14px; height: 10px; border-radius: 3px; border: 2px dashed #ca8a04; background: #fef9c3; }
+
+        /* CALENDRIERS */
+        .calendars-section h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #a0aec0;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .months-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .month-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        }
+        .month-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 14px;
+            text-align: center;
+            text-transform: capitalize;
+        }
+        .weekdays-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 4px;
+        }
+        .wd {
+            text-align: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #a0aec0;
+            text-transform: uppercase;
+            padding: 4px 0;
+        }
+        .days-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        .cal-day {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            border: 1.5px solid transparent;
+            transition: all 0.15s;
+            background: #f8fafc;
+            overflow: hidden;
+        }
+        .cal-day.empty     { background: transparent; cursor: default; border: none; }
+        .cal-day.weekend   { background: #f1f5f9; }
+        .cal-day:not(.empty):hover { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.12); z-index: 2; }
+
+        .cal-day.has-ecole {
+            border-color: #ca8a04 !important;
+            border-style: dashed !important;
+        }
+
+        .day-num {
+            font-size: 11px;
+            font-weight: 700;
+            color: #2d3748;
+            z-index: 2;
+            line-height: 1;
+        }
+        .cal-day.weekend .day-num { color: #cbd5e0; }
+        .day-dots {
+            display: flex;
+            gap: 1px;
+            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 2;
+            margin-top: 2px;
+        }
+        .ddot {
+            width: 4px; height: 4px;
+            border-radius: 50%;
+        }
+        .day-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            opacity: 0.18;
+        }
+
+        /* BLOC TOTAUX */
+        .totals-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .totals-card h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #a0aec0;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+        .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+        .total-item {
+            border-radius: 12px;
+            padding: 16px;
+            background: #f8fafc;
+            border-left: 4px solid;
+            text-align: center;
+        }
+        .total-item[data-person="amir"]   { border-color: #6366f1; }
+        .total-item[data-person="zakia"]  { border-color: #ec4899; }
+        .total-item[data-person="jihad"]  { border-color: #f97316; }
+        .total-item[data-person="douaa"]  { border-color: #14b8a6; }
+        .total-item[data-person="maroua"] { border-color: #8b5cf6; }
+        .total-name  { font-size: 12px; font-weight: 700; color: #4a5568; margin-bottom: 6px; }
+        .total-count { font-size: 28px; font-weight: 800; line-height: 1; }
+        .total-item[data-person="amir"]   .total-count { color: #6366f1; }
+        .total-item[data-person="zakia"]  .total-count { color: #ec4899; }
+        .total-item[data-person="jihad"]  .total-count { color: #f97316; }
+        .total-item[data-person="douaa"]  .total-count { color: #14b8a6; }
+        .total-item[data-person="maroua"] .total-count { color: #8b5cf6; }
+        .total-sub   { font-size: 10px; color: #a0aec0; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .total-ecole { font-size: 11px; color: #ca8a04; font-weight: 600; margin-top: 4px; }
+
+        /* BLOC ALERTES */
+        .alerts-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-left: 5px solid #ef4444;
+            margin-bottom: 24px;
+        }
+        .alerts-card h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #a0aec0;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .alerts-subtitle { font-size: 13px; color: #718096; margin-bottom: 16px; }
+        .alert-empty { color: #10b981; font-size: 14px; font-weight: 600; }
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: #fef2f2;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+        }
+        .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .alert-date { font-weight: 700; font-size: 14px; color: #dc2626; }
+        .alert-who  { font-size: 12px; color: #718096; margin-top: 2px; }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            font-size: 12px;
+            color: #a0aec0;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .months-grid { grid-template-columns: 1fr; }
+            .totals-grid { grid-template-columns: repeat(2, 1fr); }
+            .profiles-grid { gap: 8px; }
+            .profile-btn { font-size: 13px; padding: 9px 14px; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 16px 10px; }
+            .logo-wrapper { padding: 16px 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- LOGO -->
+    <div class="logo-wrapper">
+        <img src="https://cdn.shopify.com/s/files/1/0695/6312/1845/files/War.png?v=1781560442" alt="WeCreate">
+    </div>
+
+    <!-- STATUS -->
+    <div class="status-bar">
+        <div class="status-dot loading" id="statusDot"></div>
+        <span id="statusText">Connexion à la base de données…</span>
+    </div>
+
+    <!-- PROFILS -->
+    <div class="profiles-card">
+        <h2>👤 Qui êtes-vous ?</h2>
+        <div class="profiles-grid">
+            <button class="profile-btn" data-person="amir" data-mode="vacances">
+                <span class="profile-dot c-amir"></span> Amir
+                <span class="mode-badge badge-vacances">Vacances</span>
+            </button>
+            <button class="profile-btn" data-person="zakia" data-mode="vacances">
+                <span class="profile-dot c-zakia"></span> Zakia
+                <span class="mode-badge badge-vacances">Vacances</span>
+            </button>
+            <button class="profile-btn" data-person="jihad" data-mode="vacances">
+                <span class="profile-dot c-jihad"></span> Jihad
+                <span class="mode-badge badge-vacances">Vacances</span>
+            </button>
+            <!-- Douaa : 2 boutons -->
+            <button class="profile-btn" data-person="douaa" data-mode="vacances">
+                <span class="profile-dot c-douaa"></span> Douaa
+                <span class="mode-badge badge-vacances">Vacances</span>
+            </button>
+            <button class="profile-btn" data-person="douaa" data-mode="ecole">
+                <span class="profile-dot c-douaa"></span> Douaa
+                <span class="mode-badge badge-ecole">École</span>
+            </button>
+            <!-- Maroua : 2 boutons -->
+            <button class="profile-btn" data-person="maroua" data-mode="vacances">
+                <span class="profile-dot c-maroua"></span> Maroua
+                <span class="mode-badge badge-vacances">Vacances</span>
+            </button>
+            <button class="profile-btn" data-person="maroua" data-mode="ecole">
+                <span class="profile-dot c-maroua"></span> Maroua
+                <span class="mode-badge badge-ecole">École</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- LÉGENDE -->
+    <div class="legend">
+        <span class="legend-title">Légende</span>
+        <span class="legend-item"><span class="legend-dot c-amir"></span>Amir</span>
+        <span class="legend-item"><span class="legend-dot c-zakia"></span>Zakia</span>
+        <span class="legend-item"><span class="legend-dot c-jihad"></span>Jihad</span>
+        <span class="legend-item"><span class="legend-dot c-douaa"></span>Douaa</span>
+        <span class="legend-item"><span class="legend-dot c-maroua"></span>Maroua</span>
+        <span class="legend-item"><span class="legend-square"></span>Jour école</span>
+    </div>
+
+    <!-- CALENDRIERS -->
+    <div class="calendars-section">
+        <h2>📅 Calendrier 2025–2026</h2>
+        <div class="months-grid" id="monthsGrid"></div>
+    </div>
+
+    <!-- TOTAUX -->
+    <div class="totals-card">
+        <h2>📊 Total des vacances par personne</h2>
+        <div class="totals-grid">
+            <div class="total-item" data-person="amir">
+                <div class="total-name">Amir</div>
+                <div class="total-count" id="total-amir">0</div>
+                <div class="total-sub">jour(s)</div>
+            </div>
+            <div class="total-item" data-person="zakia">
+                <div class="total-name">Zakia</div>
+                <div class="total-count" id="total-zakia">0</div>
+                <div class="total-sub">jour(s)</div>
+            </div>
+            <div class="total-item" data-person="jihad">
+                <div class="total-name">Jihad</div>
+                <div class="total-count" id="total-jihad">0</div>
+                <div class="total-sub">jour(s)</div>
+            </div>
+            <div class="total-item" data-person="douaa">
+                <div class="total-name">Douaa</div>
+                <div class="total-count" id="total-douaa">0</div>
+                <div class="total-sub">vacances</div>
+                <div class="total-ecole" id="ecole-douaa">0 jour(s) école</div>
+            </div>
+            <div class="total-item" data-person="maroua">
+                <div class="total-name">Maroua</div>
+                <div class="total-count" id="total-maroua">0</div>
+                <div class="total-sub">vacances</div>
+                <div class="total-ecole" id="ecole-maroua">0 jour(s) école</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALERTES -->
+    <div class="alerts-card">
+        <h2>⚠️ Alertes absences simultanées</h2>
+        <p class="alerts-subtitle">Dates avec <strong>3 personnes ou plus</strong> en vacances en même temps</p>
+        <div id="alertsList"><div class="alert-empty">✅ Aucune absence simultanée pour le moment</div></div>
+    </div>
+
+    <div class="footer">Created by WeCreate</div>
+</div>
+
+<!-- Firebase SDK compat -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ── Firebase ──
+firebase.initializeApp({
+    apiKey: "AIzaSyCW5jgMVtfjlFdUketfCaHidnVvKfzGt30",
+    authDomain: "wecreate-6c53e.firebaseapp.com",
+    databaseURL: "https://wecreate-6c53e-default-rtdb.firebasedatabase.app",
+    projectId: "wecreate-6c53e",
+    storageBucket: "wecreate-6c53e.firebasestorage.app",
+    messagingSenderId: "62409162935",
+    appId: "1:62409162935:web:920c981945f059e7c58d32"
+});
+const db = firebase.database();
+const dataRef = db.ref('vacances');
+
+// ── Config ──
+const PERSONS = ['amir','zakia','jihad','douaa','maroua'];
+const COLORS = {
+    amir:   '#6366f1',
+    zakia:  '#ec4899',
+    jihad:  '#f97316',
+    douaa:  '#14b8a6',
+    maroua: '#8b5cf6'
+};
+const NAMES = { amir:'Amir', zakia:'Zakia', jihad:'Jihad', douaa:'Douaa', maroua:'Maroua' };
+
+// 12 mois : septembre 2025 → août 2026
+const MONTHS = [
+    { year:2025, month:8,  label:'Septembre 2025' },
+    { year:2025, month:9,  label:'Octobre 2025' },
+    { year:2025, month:10, label:'Novembre 2025' },
+    { year:2025, month:11, label:'Décembre 2025' },
+    { year:2026, month:0,  label:'Janvier 2026' },
+    { year:2026, month:1,  label:'Février 2026' },
+    { year:2026, month:2,  label:'Mars 2026' },
+    { year:2026, month:3,  label:'Avril 2026' },
+    { year:2026, month:4,  label:'Mai 2026' },
+    { year:2026, month:5,  label:'Juin 2026' },
+    { year:2026, month:6,  label:'Juillet 2026' },
+    { year:2026, month:7,  label:'Août 2026' },
+];
+
+// data[key] = { vacances: ['amir','zakia',...], ecole: ['douaa'] }
+// key = "YYYY-M-D"
+let data = {};
+let currentPerson = null;
+let currentMode   = null;
+
+// ── Statut ──
+function setStatus(state, msg) {
+    document.getElementById('statusDot').className = 'status-dot ' + state;
+    document.getElementById('statusText').textContent = msg;
+}
+
+// ── Clé de jour ──
+function dayKey(year, month, day) {
+    return year + '-' + month + '-' + day;
+}
+
+// ── Construire les calendriers ──
+function buildCalendars() {
+    var grid = document.getElementById('monthsGrid');
+    grid.innerHTML = '';
+    MONTHS.forEach(function(m) {
+        var card = document.createElement('div');
+        card.className = 'month-card';
+        card.innerHTML = '<div class="month-title">' + m.label + '</div>' +
+            '<div class="weekdays-row">' +
+            ['L','M','M','J','V','S','D'].map(function(d){ return '<div class="wd">'+d+'</div>'; }).join('') +
+            '</div>' +
+            '<div class="days-row" id="month-' + m.year + '-' + m.month + '"></div>';
+        grid.appendChild(card);
+        fillMonth(m.year, m.month);
+    });
+}
+
+function fillMonth(year, month) {
+    var container = document.getElementById('month-' + year + '-' + month);
+    if (!container) return;
+    container.innerHTML = '';
+    var firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+    var firstMon = (firstDay === 0) ? 6 : firstDay - 1; // convert to Mon=0
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (var i = 0; i < firstMon; i++) {
+        var e = document.createElement('div'); e.className = 'cal-day empty'; container.appendChild(e);
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+        var dow = new Date(year, month, d).getDay();
+        var isWeekend = (dow === 0 || dow === 6);
+        var el = document.createElement('div');
+        el.className = 'cal-day' + (isWeekend ? ' weekend' : '');
+        el.dataset.year  = year;
+        el.dataset.month = month;
+        el.dataset.day   = d;
+
+        var bg   = document.createElement('div'); bg.className = 'day-bg';
+        var num  = document.createElement('div'); num.className = 'day-num'; num.textContent = d;
+        var dots = document.createElement('div'); dots.className = 'day-dots';
+        el.appendChild(bg); el.appendChild(num); el.appendChild(dots);
+
+        el.addEventListener('click', (function(y, mo, da) {
+            return function() { toggleDay(y, mo, da); };
+        })(year, month, d));
+
+        container.appendChild(el);
+    }
+    refreshMonth(year, month);
+}
+
+// ── Toggle ──
+function toggleDay(year, month, day) {
+    if (!currentPerson) { alert('⚠️ Sélectionnez d\'abord votre profil !'); return; }
+    var key = dayKey(year, month, day);
+    if (!data[key]) data[key] = { vacances: [], ecole: [] };
+
+    var arr = data[key][currentMode];
+    var idx = arr.indexOf(currentPerson);
+    if (idx > -1) arr.splice(idx, 1);
+    else arr.push(currentPerson);
+
+    // Nettoyer si vide
+    if (data[key].vacances.length === 0 && data[key].ecole.length === 0) delete data[key];
+
+    saveData();
+}
+
+// ── Rafraîchir un mois ──
+function refreshMonth(year, month) {
+    var container = document.getElementById('month-' + year + '-' + month);
+    if (!container) return;
+    container.querySelectorAll('.cal-day:not(.empty)').forEach(function(el) {
+        var y = parseInt(el.dataset.year);
+        var mo = parseInt(el.dataset.month);
+        var d  = parseInt(el.dataset.day);
+        var key = dayKey(y, mo, d);
+        var entry = data[key] || { vacances:[], ecole:[] };
+
+        var dots = el.querySelector('.day-dots');
+        var bg   = el.querySelector('.day-bg');
+        dots.innerHTML = '';
+
+        var allVac = entry.vacances || [];
+        var allEco = entry.ecole   || [];
+
+        // Dots vacances
+        allVac.forEach(function(p) {
+            var dot = document.createElement('div');
+            dot.className = 'ddot';
+            dot.style.background = COLORS[p];
+            dots.appendChild(dot);
+        });
+        // Dots école (carré pointillé en fond)
+        el.classList.toggle('has-ecole', allEco.length > 0);
+
+        // Background
+        if (allVac.length === 0) {
+            bg.style.background = 'transparent';
+        } else if (allVac.length === 1) {
+            bg.style.background = COLORS[allVac[0]];
+            bg.style.opacity = '0.2';
+        } else {
+            bg.style.background = 'linear-gradient(135deg,' + allVac.map(function(p){ return COLORS[p]; }).join(',') + ')';
+            bg.style.opacity = '0.22';
+        }
+    });
+}
+
+function refreshAll() {
+    MONTHS.forEach(function(m) { refreshMonth(m.year, m.month); });
+    updateTotals();
+    updateAlerts();
+}
+
+// ── Totaux ──
+function updateTotals() {
+    PERSONS.forEach(function(p) {
+        var vacCount = 0, ecoCount = 0;
+        Object.keys(data).forEach(function(k) {
+            var entry = data[k];
+            if (entry.vacances && entry.vacances.includes(p)) vacCount++;
+            if (entry.ecole   && entry.ecole.includes(p))   ecoCount++;
+        });
+        var el = document.getElementById('total-' + p);
+        if (el) el.textContent = vacCount;
+        var eco = document.getElementById('ecole-' + p);
+        if (eco) eco.textContent = ecoCount + ' jour(s) école';
+    });
+}
+
+// ── Alertes ──
+function updateAlerts() {
+    var alertsList = document.getElementById('alertsList');
+    var alerts = [];
+
+    Object.keys(data).forEach(function(key) {
+        var entry = data[key];
+        var vacPeople = entry.vacances || [];
+        if (vacPeople.length >= 3) {
+            var parts = key.split('-');
+            var y = parseInt(parts[0]), mo = parseInt(parts[1]), d = parseInt(parts[2]);
+            var date = new Date(y, mo, d);
+            var label = date.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+            alerts.push({ label: label, people: vacPeople, date: date });
+        }
+    });
+
+    alerts.sort(function(a,b){ return a.date - b.date; });
+
+    if (alerts.length === 0) {
+        alertsList.innerHTML = '<div class="alert-empty">✅ Aucune absence simultanée pour le moment</div>';
+    } else {
+        alertsList.innerHTML = alerts.map(function(a) {
+            var names = a.people.map(function(p){ return NAMES[p]; }).join(', ');
+            return '<div class="alert-item">' +
+                '<div class="alert-icon">⚠️</div>' +
+                '<div><div class="alert-date">' + a.label + '</div>' +
+                '<div class="alert-who">' + a.people.length + ' absences : ' + names + '</div></div>' +
+                '</div>';
+        }).join('');
+    }
+}
+
+// ── Sélection profil ──
+document.querySelectorAll('.profile-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.profile-btn').forEach(function(b) {
+            b.classList.remove('active-vacances','active-ecole');
+        });
+        currentPerson = btn.dataset.person;
+        currentMode   = btn.dataset.mode;
+        btn.classList.add('active-' + currentMode);
+    });
+});
+
+// ── Firebase save/load ──
+function saveData() {
+    setStatus('loading', 'Sauvegarde…');
+    dataRef.set(data)
+        .then(function() { setStatus('ok', 'Données sauvegardées ✓'); })
+        .catch(function(e) { setStatus('err', 'Erreur : ' + e.message); });
+}
+
+dataRef.on('value', function(snap) {
+    data = snap.val() || {};
+    refreshAll();
+    setStatus('ok', 'Calendrier synchronisé en temps réel ✓');
+}, function(err) {
+    setStatus('err', 'Erreur de connexion : ' + err.message);
+});
+
+// ── Init ──
+buildCalendars();
+</script>
+</body>
+</html>
