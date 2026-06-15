@@ -751,7 +751,19 @@ function saveData() {
 
 dataRef.on('value', function(snap) {
     data = snap.val() || {};
+    // Restaurer les boutons actifs après le refresh
+    var activePerson = currentPerson;
+    var activeMode   = currentMode;
     refreshAll();
+    // Re-appliquer la classe active si quelqu'un est sélectionné
+    if (activePerson && activeMode) {
+        document.querySelectorAll('.profile-btn').forEach(function(b) {
+            if (b.dataset.person === activePerson && b.dataset.mode === activeMode) {
+                b.classList.add('active-' + activeMode);
+                b.setAttribute('data-active', 'true');
+            }
+        });
+    }
     setStatus('ok', 'Calendrier synchronisé en temps réel ✓');
 }, function(err) {
     setStatus('err', 'Erreur de connexion : ' + err.message);
